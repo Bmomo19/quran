@@ -7,12 +7,12 @@ class VerseCard extends StatelessWidget {
   final VoidCallback? onShare;
 
   const VerseCard({
-    Key? key,
+    super.key,
     required this.verseNumber,
     required this.verseText,
     this.onBookmark,
     this.onShare,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

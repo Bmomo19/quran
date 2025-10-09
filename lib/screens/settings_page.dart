@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -45,7 +45,7 @@ class _SettingsPageState extends State<SettingsPage> {
               trailing: Switch(
                 value: false,
                 onChanged: (value) {},
-                activeColor: const Color(0xFF00897B),
+                activeThumbColor: const Color(0xFF00897B),
               ),
             ),
           ),

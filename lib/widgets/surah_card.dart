@@ -5,7 +5,7 @@ import '../screens/surah_detail_page.dart';
 class SurahCard extends StatelessWidget {
   final Surah surah;
 
-  const SurahCard({Key? key, required this.surah}) : super(key: key);
+  const SurahCard({super.key, required this.surah});
 
   @override
   Widget build(BuildContext context) {

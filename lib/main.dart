@@ -6,7 +6,7 @@ void main() {
 }
 
 class QuranApp extends StatelessWidget {
-  const QuranApp({Key? key}) : super(key: key);
+  const QuranApp({super.key});
 
   @override
   Widget build(BuildContext context) {

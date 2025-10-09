@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:qourane/services/api_service.dart';
+import 'package:qourane/utils/constants.dart';
 import '../models/surah.dart';
 import '../widgets/surah_card.dart';
 import 'favorites_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -15,6 +17,8 @@ class _HomePageState extends State<HomePage> {
   int _selectedIndex = 0;
   List<Surah> _surahs = [];
   List<Surah> _filteredSurahs = [];
+  bool _isLoading = true;
+  String? _errorMessage;
   final TextEditingController _searchController = TextEditingController();
 
   @override
@@ -23,11 +27,43 @@ class _HomePageState extends State<HomePage> {
     _loadSurahs();
   }
 
-  void _loadSurahs() {
+  Future<void> _loadSurahs() async {
     setState(() {
-      _surahs = SurahData.getAllSurahs();
-      _filteredSurahs = _surahs;
+      _isLoading = true;
+      _errorMessage = null;
     });
+
+    try {
+      final apiService = ApiService();
+      final surahs = await apiService.getAllSurahs();
+
+      setState(() {
+        _surahs = surahs;
+        _filteredSurahs = surahs;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Erreur de chargement: $e';
+        _isLoading = false;
+      });
+
+      // Fallback: utiliser les données locales
+      setState(() {
+        _surahs = SurahData.getAllSurahs();
+        _filteredSurahs = _surahs;
+      });
+
+      // Afficher un message à l'utilisateur
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Mode hors ligne: $_errorMessage'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   void _filterSurahs(String query) {
@@ -64,7 +100,7 @@ class _HomePageState extends State<HomePage> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(),
               blurRadius: 10,
             ),
           ],
@@ -105,8 +141,9 @@ class _HomePageState extends State<HomePage> {
             title: const Text(
               'القرآن الكريم',
               style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+                fontSize: 30,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFFFFFFFF)
               ),
             ),
             background: Container(
@@ -115,8 +152,8 @@ class _HomePageState extends State<HomePage> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF00897B),
-                    const Color(0xFF00897B).withOpacity(0.8),
+                    AppColors.primary,
+                    AppColors.primary.withValues(alpha: 0.8),
                   ],
                 ),
               ),
@@ -124,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                 child: Icon(
                   Icons.auto_stories,
                   size: 80,
-                  color: Colors.white.withOpacity(0.3),
+                  color: Colors.white.withValues(alpha:0.3),
                 ),
               ),
             ),
@@ -149,7 +186,37 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
         ),
-        SliverPadding(
+        if (_isLoading)
+          const SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(50.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          )
+        else if (_errorMessage != null)
+          SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  children: [
+                    const Icon(Icons.error_outline, size: 60, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(_errorMessage!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadSurahs,
+                      child: const Text('Réessayer'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           sliver: SliverList(
             delegate: SliverChildBuilderDelegate(

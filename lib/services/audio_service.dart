@@ -11,6 +11,10 @@ class AudioService {
   bool get isPlaying => _isPlaying;
   Duration get duration => _duration;
   Duration get position => _position;
+  Stream<Duration> get onPositionChanged => _audioPlayer.onPositionChanged;
+  Stream<Duration> get onDurationChanged => _audioPlayer.onDurationChanged;
+  Stream<void> get onPlayerComplete => _audioPlayer.onPlayerComplete;
+
 
   // Initialiser les écouteurs
   void initialize() {

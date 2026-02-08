@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:qourane/services/api_service.dart';
 import 'package:qourane/services/audio_service.dart';
 import 'package:qourane/utils/constants.dart';
+import 'package:qourane/widgets/AudioButton.dart';
 import '../models/surah.dart';
 import '../models/reciter.dart';
 import '../widgets/verse_card.dart';
@@ -18,6 +19,7 @@ class SurahDetailPage extends StatefulWidget {
 class _SurahDetailPageState extends State<SurahDetailPage> {
   Reciter? selectedReciter;
 
+  bool isLoadingAudio = false;
   bool isListenMode = true;
   bool isPlaying = false;
   int selectedReciterId = ReciterIds.misharyRashid;
@@ -34,6 +36,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
     super.initState();
     _audioService.initialize();
     _loadVerses();
+    _allReciter();
   }
 
   @override
@@ -47,12 +50,10 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     try {
       final result = await apiService.getSurahWithVerses(widget.surah.number);
-
       setState(() {
-        verses = result['verses'] as List<String>;
+        verses = result['verses'];
         _isLoading = false;
       });
     } catch (e) {
@@ -60,57 +61,29 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         _errorMessage = 'Erreur: $e';
         _isLoading = false;
       });
-
-      // // Fallback: garder les versets par défaut
-      // setState(() {
-      //   verses = [
-      //     'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-      //     'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
-      //     'الرَّحْمَٰنِ الرَّحِيمِ',
-      //     'مَالِكِ يَوْمِ الدِّينِ',
-      //     'إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ',
-      //     'اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ',
-      //     'صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ',
-      //   ];
-      // });
+      print('$e');
     }
   }
 
-  Future<void> _toggleAudio() async {
-    if (isPlaying) {
-      await _audioService.pause();
-      setState(() => isPlaying = false);
-    } else {
-      try {
-        if (_currentAudioUrl == null) {
-          // Charger l'URL audio
-          final apiService = ApiService();
-          _currentAudioUrl = await apiService.getAudioUrl(
-            widget.surah.number,
-            selectedReciterId,
-          );
-        }
-
-        await _audioService.play(_currentAudioUrl!);
-        setState(() => isPlaying = true);
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Erreur audio: $e')));
-      }
-    }
-  }
-
-  Future<void> _allRecitateur() async {
+  Future<void> _allReciter() async {
     try {
       final result = await apiService.getRecitations();
       setState(() {
-        reciters = result as List<Reciter>;
+        reciters = result;
       });
-      print('${reciters.length} récitateurs disponibles');
     } catch (e) {
-      print('Erreur: $e');
+      setState(() {
+        _errorMessage = 'Erreur: $e';
+      });
     }
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours.remainder(24));
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
   }
 
   @override
@@ -137,8 +110,8 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
         title: Text(
           widget.surah.name,
           style: TextStyle(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
           ),
         ),
         background: Container(
@@ -235,7 +208,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(),
+              color: Colors.black.withValues(alpha: 0.3),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -245,7 +218,7 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
           children: [
             const Text(
               'Récitateur',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Container(
@@ -260,14 +233,14 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
                 underline: const SizedBox(),
                 items: reciters.map((recit) {
                   return DropdownMenuItem<int>(
-                    value: recit.id,
-                    child: Text(recit.reciter_name),
+                    value: recit['id'],
+                    child: Text(recit['reciter_name']),
                   );
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
                     selectedReciterId = newValue!;
-                    _currentAudioUrl = null; // Réinitialiser l'URL
+                    _currentAudioUrl = null;
                     if (isPlaying) {
                       _audioService.stop();
                       isPlaying = false;
@@ -299,11 +272,11 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
                       ),
                     ],
                   ),
-                  child: IconButton(
-                    onPressed: _toggleAudio,
-                    icon: Icon(isPlaying ? Icons.pause : Icons.play_arrow),
-                    iconSize: 50,
-                    color: Colors.white,
+                  child: AudioButton(
+                    isPlaying: isPlaying,
+                    getAudioUrl: () => apiService.getAudioUrl(widget.surah.number, selectedReciterId),
+                    play: _audioService.play,
+                    pause: _audioService.pause,
                   ),
                 ),
                 const SizedBox(width: 20),
@@ -316,20 +289,54 @@ class _SurahDetailPageState extends State<SurahDetailPage> {
               ],
             ),
             const SizedBox(height: 24),
-            Slider(
-              value: 0.3,
-              onChanged: (value) {},
-              activeColor: AppColors.primary,
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('1:23', style: TextStyle(fontSize: 12)),
-                  Text('4:56', style: TextStyle(fontSize: 12)),
-                ],
-              ),
+            StreamBuilder<Duration>(
+              stream: _audioService.onPositionChanged,
+              builder: (context, positionSnapshot) {
+                final position = positionSnapshot.data ?? Duration.zero;
+
+                return StreamBuilder<Duration>(
+                  stream: _audioService.onDurationChanged,
+                  builder: (context, durationSnapshot) {
+                    final duration = durationSnapshot.data ?? Duration.zero;
+
+                    final progress = (duration.inMilliseconds > 0)
+                        ? position.inMilliseconds / duration.inMilliseconds
+                        : 0.0;
+
+                    return Column(
+                      children: [
+                        Slider(
+                          value: progress.clamp(0.0, 1.0),
+                          onChanged: (value) {
+                            final newPosition = Duration(
+                              milliseconds: (value * duration.inMilliseconds)
+                                  .round(),
+                            );
+                            _audioService.seek(newPosition);
+                          },
+                          activeColor: AppColors.primary,
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _formatDuration(position),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              Text(
+                                _formatDuration(duration),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),

@@ -139,7 +139,7 @@ class ApiService {
 
       // Récupérer les versets de la sourate
       final versesResponse = await http.get(
-        Uri.parse('$baseUrl/verses/by_chapter/$chapterId?words=false&translations=false&audio=false'),
+        Uri.parse('$baseUrl/quran/verses/uthmani?chapter_number=$chapterId'),
         headers: {
           'x-auth-token': token,
           'x-client-id': clientId,
@@ -165,7 +165,6 @@ class ApiService {
         final List<String> verseTexts = verses
             .map((verse) => verse['text_uthmani'] as String)
             .toList();
-
         return {
           'surah': surah,
           'verses': verseTexts,

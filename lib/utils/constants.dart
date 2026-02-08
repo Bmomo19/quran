@@ -13,10 +13,10 @@ class AppColors {
 // Configuration OAuth Quran.com
 // ⚠️ IMPORTANT: Remplacez ces valeurs par vos vrais identifiants
 class QuranApiConfig {
-  static const String clientId = '739a7ddf-3da5-4c96-999d-273d37c28be4';
-  static const String clientSecret = 'wfZx408XJ3YLa.83k42g1-Dyp0';
-  static const String oauthUrl = 'https://prelive-oauth2.quran.foundation/oauth2/token';
-  static const String baseUrl = 'https://apis-prelive.quran.foundation/content/api/v4';
+  static const String clientId = '11fb6ec7-ad97-4321-915a-732e2909e005';
+  static const String clientSecret = '470ZNvAsOEUwcApDlEcy-xdWJv';
+  static const String oauthUrl = 'https://oauth2.quran.foundation/oauth2/token';
+  static const String baseUrl = 'https://apis.quran.foundation/content/api/v4';
 }
 
 // IDs des traductions populaires (Quran.com API)
